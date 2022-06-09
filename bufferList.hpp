@@ -2,7 +2,7 @@
 #define BPTREE_HPP_BUFFERLIST_HPP
 
 
-template<class T, int L = 100>
+template<class T, int L = 50>
 
 class bufferList {
 private:
@@ -89,6 +89,18 @@ public:
         size--;
         delete p;
         return tmp.val;
+    }
+
+    void clear(){
+        linkNode *p,*del;
+        p=head->nxt;
+        while(p!=rear){
+            del=p;
+            p=p->nxt;
+            delete del;
+        }
+        head->nxt=rear;
+        rear->fro=head;
     }
 
 };

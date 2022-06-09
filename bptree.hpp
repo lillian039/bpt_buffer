@@ -23,30 +23,18 @@ private:
         std::pair<Key, T> value[L];//0 base
     };
 
+    std::string file_tree_name, file_leaf_name;
     bufferList<Node>node_buffer;
     bufferList<Leaf>leaf_buffer;
     Node root;
     Leaf leaf;
 public:
     explicit BPTree(const std::string &name) {
-        std::string file_tree_name, file_leaf_name;
         file_tree_name = name + "_file_tree", file_leaf_name = name + "_file_leaf";
         file_tree.open(file_tree_name);
         file_leaf.open(file_leaf_name);
         if (!file_leaf || !file_tree) { //第一次打开文件 要新建文件 初始化一些东西进去
-            file_tree.open(file_tree_name, std::ios::out);
-            file_leaf.open(file_leaf_name, std::ios::out);
-            root.is_leaf = root.pos = root.A[0] = 1, sum_data = 0;
-            root.n = 1;
-            rear_leaf = rear_tree = 1;//1 base
-            Leaf ini_leaf;
-            ini_leaf.nxt = ini_leaf.n = 0;
-            ini_leaf.pos = 1;
-            write_leaf(ini_leaf);
-            file_tree.close();
-            file_leaf.close();
-            file_tree.open(file_tree_name);
-            file_leaf.open(file_leaf_name);
+           initialize();
         } else {
             file_tree.seekg(0), file_leaf.seekg(0);
             int root_tree;
@@ -141,6 +129,14 @@ public:
     void modify (const std::pair<Key, T> &val,T new_val){
         remove(val);
         insert(std::make_pair(val.first,new_val));
+    }
+
+    void clear(){
+        file_tree.close();
+        file_leaf.close();
+        node_buffer.clear();
+        leaf_buffer.clear();
+        initialize();
     }
 
 private:
@@ -423,6 +419,22 @@ private:
             else l = mid;
         }
         return l + 1;
+    }
+
+    void initialize(){
+        file_tree.open(file_tree_name, std::ios::out);
+        file_leaf.open(file_leaf_name, std::ios::out);
+        root.is_leaf = root.pos = root.A[0] = 1, sum_data = 0;
+        root.n = 1;
+        rear_leaf = rear_tree = 1;//1 base
+        Leaf ini_leaf;
+        ini_leaf.nxt = ini_leaf.n = 0;
+        ini_leaf.pos = 1;
+        write_leaf(ini_leaf);
+        file_tree.close();
+        file_leaf.close();
+        file_tree.open(file_tree_name);
+        file_leaf.open(file_leaf_name);
     }
 };
 
