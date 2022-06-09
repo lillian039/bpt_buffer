@@ -132,13 +132,13 @@ public:
         return ans;
     }
 
-    T find(const Key &key) {
+    std::pair<bool,T> find(const Key &key){
         T val;
         Node p = root;
         while (!p.is_leaf)read_node(p, p.A[binary_search_node(key, p)]);//A[now]中元素小于等于Key[now] 循环找到叶节点
         read_leaf(leaf, p.A[binary_search_node(key, p)]);//找到叶子节点
         int now = binary_search_leaf(key, leaf);
-        return leaf.value[now].second;
+        return std::make_pair(leaf.value[now].first==key,leaf.value[now].second);
     }
 
     void remove(const std::pair<Key, T> &val) {
