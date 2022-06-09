@@ -4,7 +4,7 @@
 #include <fstream>
 #include "bufferList.hpp"
 
-template<class Key, class T, int M = 4, int L = 6>
+template<class Key, class T, int M = 100, int L = 100>
 class BPTree {
 private:
     std::fstream file_tree, file_leaf;
