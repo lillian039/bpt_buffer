@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include "bufferList.hpp"
+#include "vector.hpp"
 
 template<class Key, class T, int M = 100, int L = 100>
 class BPTree {
@@ -11,8 +12,7 @@ private:
     int rear_tree, rear_leaf, sum_data;
     const int len_of_head_leaf = 2 * sizeof(int);
     const int len_of_head_tree = 2 * sizeof(int);
-    sjtu::vector<int> empty_tree;
-    sjtu::vector<int> empty_leaf;
+
 
     struct Node {
         bool is_leaf;
@@ -46,23 +46,23 @@ public:
             file_tree.read(reinterpret_cast<char *>(&rear_tree), sizeof(int));
             file_tree.seekg(len_of_head_tree + root_tree * sizeof(Node));
             file_tree.read(reinterpret_cast<char *>(&root), sizeof(Node));
-            int node_empty_size, leaf_empty_size;
+           /* int node_empty_size, leaf_empty_size;
             file_tree.seekg(len_of_head_tree + (rear_tree + 1) * sizeof(Node));
             file_tree.read(reinterpret_cast<char *>(&node_empty_size), sizeof(int));
             for (int i = 0; i < node_empty_size; i++) {
                 int data;
                 file_tree.read(reinterpret_cast<char *>(&data), sizeof(int));
                 empty_tree.push_back(data);
-            }
+            }*/
             file_leaf.read(reinterpret_cast<char *>(&rear_leaf), sizeof(int));
             file_leaf.read(reinterpret_cast<char *>(&sum_data), sizeof(int));
-            file_leaf.seekg(len_of_head_leaf + (rear_leaf + 1) * sizeof(Leaf));
+            /*file_leaf.seekg(len_of_head_leaf + (rear_leaf + 1) * sizeof(Leaf));
             file_leaf.read(reinterpret_cast<char *>(&leaf_empty_size), sizeof(int));
             for (int i = 0; i < leaf_empty_size; i++) {
                 int data;
                 file_leaf.read(reinterpret_cast<char *>(&data), sizeof(int));
                 empty_leaf.push_back(data);
-            }
+            }*/
         }
     }
 
@@ -85,14 +85,15 @@ public:
             file_leaf.seekg(tmp.pos * sizeof(Leaf) + len_of_head_leaf);
             file_leaf.write(reinterpret_cast<char *>(&tmp), sizeof(Leaf));
         }
-        file_tree.seekg(len_of_head_tree+(rear_tree+1)* sizeof(Node));
-        int size_tree=empty_tree.size(),size_leaf=empty_leaf.size();
-      //  std::cout<<size_tree<<" "<<size_leaf<<std::endl;
+        file_tree.seekg(len_of_head_tree + (rear_tree + 1) * sizeof(Node));
+        /*int size_tree = empty_tree.size(), size_leaf = empty_leaf.size();
         file_tree.write(reinterpret_cast<char *>(&size_tree), sizeof(int));
-        for(int i=0;i<empty_tree.size();i++)file_tree.write(reinterpret_cast<char *>(&empty_tree[i]), sizeof(int));
-        file_leaf.seekg(len_of_head_leaf+(rear_leaf+1)* sizeof(Leaf));
+        for (int i = 0; i < empty_tree.size(); i++)
+            file_tree.write(reinterpret_cast<char *>(&empty_tree[i]), sizeof(int));
+        file_leaf.seekg(len_of_head_leaf + (rear_leaf + 1) * sizeof(Leaf));
         file_leaf.write(reinterpret_cast<char *>(&size_leaf), sizeof(int));
-        for(int i=0;i<empty_leaf.size();i++)file_leaf.write(reinterpret_cast<char *>(&empty_leaf[i]), sizeof(int));
+        for (int i = 0; i < empty_leaf.size(); i++)
+            file_leaf.write(reinterpret_cast<char *>(&empty_leaf[i]), sizeof(int));*/
         file_leaf.close();
         file_tree.close();
     }
@@ -132,13 +133,15 @@ public:
         return ans;
     }
 
-    std::pair<bool,T> find(const Key &key){
+    std::pair<bool, T> find(const Key &key) {
         T val;
         Node p = root;
         while (!p.is_leaf)read_node(p, p.A[binary_search_node(key, p)]);//A[now]中元素小于等于Key[now] 循环找到叶节点
         read_leaf(leaf, p.A[binary_search_node(key, p)]);//找到叶子节点
         int now = binary_search_leaf(key, leaf);
-        return std::make_pair(leaf.value[now].first==key,leaf.value[now].second);
+        bool flag = true;
+        if (now == leaf.n || leaf.value[now].first != key)flag = false;
+        return std::make_pair(flag, leaf.value[now].second);
     }
 
     void remove(const std::pair<Key, T> &val) {
@@ -147,7 +150,7 @@ public:
                 Node son;
                 read_node(son, root.A[0]);
                 node_buffer.remove(root.pos);
-                empty_tree.push_back(root.pos);
+                //empty_tree.push_back(root.pos);
                 root = son;
             }
         }
@@ -163,9 +166,24 @@ public:
         file_leaf.close();
         node_buffer.clear();
         leaf_buffer.clear();
-        empty_tree.clear();
-        empty_leaf.clear();
+        //empty_tree.clear();
+        //empty_leaf.clear();
         initialize();
+    }
+
+    //用于回顾 返回key之后的所有数据
+    sjtu::vector<std::pair<Key,T>> roll(const Key &key) {
+        sjtu::vector<std::pair<Key,T>> ans;
+        Node p = root;
+        while (!p.is_leaf)read_node(p, p.A[binary_search_node(key, p)]);//A[now]中元素小于等于Key[now] 循环找到叶节点
+        read_leaf(leaf, p.A[binary_search_node(key, p)]);//找到叶子节点
+        int now = binary_search_leaf(key, leaf);
+        while (now < leaf.n)ans.push_back(leaf.value[now++]);
+        while (leaf.nxt) {//读到文件尾 寻找下一块
+            read_leaf(leaf, leaf.nxt);
+            for(int i=0;i<leaf.n;i++)ans.push_back(leaf.value[i]);
+        }
+        return ans;
     }
 
 private:
@@ -220,7 +238,7 @@ private:
                     pre.nxt = leaf.nxt;
                     write_leaf(pre);
                     leaf_buffer.remove(leaf.pos);
-                    empty_leaf.push_back(leaf.pos);
+                    //empty_leaf.push_back(leaf.pos);
                     fa.n--;
                     //更新fa的关键字和数据
                     for (int i = pos_node; i < fa.n; i++)fa.A[i] = fa.A[i + 1];
@@ -237,7 +255,7 @@ private:
                     leaf.nxt = nxt.nxt;
                     write_leaf(leaf);
                     leaf_buffer.remove(nxt.pos);
-                    empty_leaf.push_back(nxt.pos);
+                    //empty_leaf.push_back(nxt.pos);
                     fa.n--;
                     //更新fa的关键字和数据
                     for (int i = pos_node + 1; i < fa.n; i++)fa.A[i] = fa.A[i + 1];
@@ -295,7 +313,7 @@ private:
                 pre.n += son.n;
                 write_node(pre);
                 node_buffer.remove(son.pos);
-                empty_tree.push_back(son.pos);
+                //empty_tree.push_back(son.pos);
                 fa.n--;
                 for (int i = now; i < fa.n; i++)fa.A[i] = fa.A[i + 1];
                 for (int i = now - 1; i < fa.n - 1; i++)fa.K[i] = fa.K[i + 1];
@@ -311,7 +329,7 @@ private:
                 son.n += nxt.n;
                 write_node(son);
                 node_buffer.remove(nxt.pos);
-                empty_tree.push_back(nxt.pos);
+                //empty_tree.push_back(nxt.pos);
                 fa.n--;
                 for (int i = now + 1; i < fa.n; i++)fa.A[i] = fa.A[i + 1];
                 for (int i = now; i < fa.n - 1; i++)fa.K[i] = fa.K[i + 1];
@@ -471,22 +489,23 @@ private:
     }
 
     int get_rear_node() {
-        if (empty_tree.empty())return ++rear_tree;
+        return ++rear_tree;
+        /*if (empty_tree.empty())return ++rear_tree;
         else {
             int new_index = empty_tree.back();
             empty_tree.pop_back();
             return new_index;
-        }
+        }*/
     }
 
     int get_rear_leaf() {
-        if (empty_leaf.empty())return ++rear_leaf;
+        return ++rear_leaf;
+        /*if (empty_leaf.empty())return ++rear_leaf;
         else {
             int new_index = empty_leaf.back();
             empty_leaf.pop_back();
             return new_index;
-        }
-
+        }*/
     }
 };
 
