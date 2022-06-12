@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include "vector.hpp"
-#include "bptree.hpp"
+#include "bptree_roll.hpp"
 #include "database.hpp"
 
 
@@ -47,8 +47,8 @@ struct String {
 };
 
 int main() {
-//    freopen("me.in", "r", stdin);
-//    freopen("me.out", "w", stdout);
+  //  freopen("5.in", "r", stdin);
+ //   freopen("me.out", "w", stdout);
     BPTree<String, int, 100, 100> bpTree("test");
     std::pair<String, int> val;
     int cnt;
@@ -65,10 +65,11 @@ int main() {
             sjtu::vector<int> ans = bpTree.Find(val.first);
             if (!ans.empty()) {
                 for (int i = 0; i < ans.size() - 1; i++)printf("%d ", ans[i]);
+                printf("%d\n",ans[ans.size()-1]);
             } else puts("null");
 
         } else if (cmd[0] == 'd') {
-            scanf("%s%d", val.first.index, &data);
+            scanf("%s%d", val.first.index, &val.second);
             bpTree.remove(val);
         }
     }
